@@ -1,0 +1,31 @@
+{
+  "name": "sports-card-investment-app",
+  "version": "1.0.0",
+  "description": "Card investment analysis app using eBay and GemRate data",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@supabase/auth-helpers-nextjs": "^0.9.0",
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.50.0",
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0",
+    "lucide-react": "^0.276.0",
+    "next": "14.1.0",
+    "node-fetch": "^2.7.0",
+    "querystring": "^0.2.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-easy-crop": "^5.4.2",
+    "tailwindcss": "^3.4.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.6",
+    "typescript": "5.8.3"
+  }
+}
