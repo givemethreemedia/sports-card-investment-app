@@ -1,0 +1,10 @@
+{
+  "css.validate": false,
+  "tailwindCSS.experimental.classRegex": [
+    "className=\"([^\"]*)",
+    "class=\"([^\"]*)",
+    "tw`([^`]*)",
+    "tw=\"([^\"]*)",
+    "tw={\"([^\"}]*)"
+  ]
+}

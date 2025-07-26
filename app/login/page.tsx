@@ -1,51 +1,55 @@
+// app/login/page.tsx
 'use client';
 
-import { useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const supabase = useSupabaseClient();
+  const user = useUser();
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
-  const router = useRouter();
+
+  useEffect(() => {
+    if (user) {
+      router.push('/investments'); // ✅ Redirect after login
+    }
+  }, [user, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const { error } = await supabase.auth.signInWithOtp({ email });
-
     if (error) {
-      setMessage('Error logging in. Please try again.');
+      setMessage('Login error: ' + error.message);
     } else {
-      setMessage('Check your email for the magic login link.');
-
-      // Optional: Redirect to dashboard after short delay
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1500);
+      setMessage('Check your email for the magic link!');
     }
   };
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-6 bg-gray-50">
-      <h1 className="text-3xl font-bold mb-4">Login</h1>
-      <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
+    <div className="flex flex-col items-center justify-center h-screen px-4">
+      <form
+        onSubmit={handleLogin}
+        className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-full max-w-sm"
+      >
+        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
         <input
           type="email"
-          placeholder="Your email"
           value={email}
+          placeholder="Enter your email"
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full border p-2 rounded"
-          required
+          className="border rounded w-full py-2 px-3 text-gray-700 leading-tight mb-4"
         />
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+          className="bg-blue-600 text-white font-bold py-2 px-4 rounded w-full"
         >
           Send Magic Link
         </button>
+        {message && <p className="mt-4 text-sm text-center text-gray-700">{message}</p>}
       </form>
-      {message && <p className="mt-4 text-sm text-gray-700">{message}</p>}
-    </main>
+    </div>
   );
 }

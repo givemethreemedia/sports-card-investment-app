@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2017",
+    "target": "es5",
     "lib": [
       "dom",
       "dom.iterable",
@@ -20,14 +20,8 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/components/*": [
-        "components/*"
-      ],
-      "@/lib/*": [
-        "lib/*"
-      ],
-      "@/app/*": [
-        "app/*"
+      "@/*": [
+        "./*"
       ]
     },
     "plugins": [
