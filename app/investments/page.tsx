@@ -1,203 +1,112 @@
 // app/investments/page.tsx
-
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
-interface InvestmentCard {
-  name: string;
-  image: string;
-  sport: string;
-  player: string;
-  url: string;
-  psa10Avg: number;
-  psa9Avg: number;
-  rawAvg: number;
-  gemRate: number;
-  liquidity: number;
-  expectedRevenuePerCard: string;
-  costPerCard: string;
-  dollarROI: string;
-  percentROI: string;
+interface SoldListing {
+  title: string;
+  price: number;
+  imageUrl: string;
+  link: string;
+  date: string;
 }
 
-export default function Page() {
-  const [data, setData] = useState<InvestmentCard[]>([]);
-  const [sportFilter, setSportFilter] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState('ROI');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const cardsPerPage = 20;
+export default function InvestmentsPage() {
+  const [listings, setListings] = useState<SoldListing[]>([]);
+  const [query, setQuery] = useState('baseball card');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const perPage = 20;
 
   useEffect(() => {
-    fetch('/api/investments')
-      .then((res) => res.json())
-      .then((data) => setData(data));
-  }, []);
-
-  const filteredData = data.filter((card) => {
-    const matchesSport = sportFilter.length === 0 || sportFilter.includes(card.sport);
-    const matchesSearch =
-      card.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      card.player.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSport && matchesSearch;
-  });
-
-  const sortedData = [...filteredData].sort((a, b) => {
-    switch (sortBy) {
-      case 'ROI':
-        return parseFloat(b.percentROI) - parseFloat(a.percentROI);
-      case 'Liquidity':
-        return b.liquidity - a.liquidity;
-      case 'GemRate':
-        return b.gemRate - a.gemRate;
-      default:
-        return 0;
+    async function fetchListings() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/scrape?q=${encodeURIComponent(query)}&limit=${perPage}`);
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        const data: SoldListing[] = await res.json();
+        setListings(data);
+      } catch (e: any) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
     }
-  });
+    fetchListings();
+  }, [query, page]);
 
-  const totalPages = Math.ceil(sortedData.length / cardsPerPage);
-  const paginatedData = sortedData.slice(
-    (currentPage - 1) * cardsPerPage,
-    currentPage * cardsPerPage
-  );
-
-  const toggleSportFilter = (sport: string) => {
-    setSportFilter((prev) =>
-      prev.includes(sport) ? prev.filter((s) => s !== sport) : [...prev, sport]
-    );
-  };
-
-  const clearFilters = () => {
-    setSportFilter([]);
-    setSearchQuery('');
-    setSortBy('ROI');
-    setCurrentPage(1);
-  };
-
-  const handlePrev = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
-  };
-
-  const handleNext = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-  };
+  const paged = listings.slice((page - 1) * perPage, page * perPage);
+  const totalPages = Math.ceil(listings.length / perPage);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-4">
-      <div className="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
-        <h1 className="text-3xl font-bold mb-6 text-gray-800">Top Investment Opportunities</h1>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Sold Listings</h1>
+      <div className="flex mb-4">
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search term"
+          className="border rounded p-2 flex-grow"
+        />
+        <button
+          onClick={() => setPage(1)}
+          className="ml-2 px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          Go
+        </button>
+      </div>
 
-        <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
-          <div className="flex gap-2 flex-wrap">
-            {['Football', 'Baseball', 'Basketball'].map((sport) => (
-              <button
-                key={sport}
-                className={`border px-3 py-1 rounded-full text-sm ${
-                  sportFilter.includes(sport)
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-800 border-gray-300'
-                }`}
-                onClick={() => toggleSportFilter(sport)}
-              >
-                {sport}
-              </button>
-            ))}
-            <button
-              onClick={clearFilters}
-              className="ml-2 text-sm underline text-gray-600 hover:text-gray-800"
-            >
-              Clear Filters
-            </button>
-          </div>
-          <div className="flex gap-4 w-full md:w-auto">
-            <input
-              type="text"
-              placeholder="Search player or card"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border border-gray-300 rounded-md p-2 flex-grow"
-            />
-            <select
-              className="border border-gray-300 rounded-md p-2"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="ROI">ROI %</option>
-              <option value="Liquidity">Liquidity</option>
-              <option value="GemRate">Gem Rate</option>
-            </select>
-          </div>
-        </div>
+      {loading && <p>Loading...</p>}
+      {error && <p className="text-red-600">Error: {error}</p>}
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto border border-gray-200">
-            <thead>
-              <tr className="bg-gray-200 text-gray-700 text-sm">
-                <th className="px-4 py-2 text-left">Card</th>
-                <th className="px-4 py-2 text-left">Player</th>
-                <th className="px-4 py-2 text-left">Sport</th>
-                <th className="px-4 py-2 text-right">Raw Avg</th>
-                <th className="px-4 py-2 text-right">PSA 10</th>
-                <th className="px-4 py-2 text-right">PSA 9</th>
-                <th className="px-4 py-2 text-right">Gem Rate</th>
-                <th className="px-4 py-2 text-right">Liquidity</th>
-                <th className="px-4 py-2 text-right">ROI %</th>
+      {!loading && !error && (
+        <table className="min-w-full border-collapse">
+          <thead>
+            <tr>
+              <th className="border p-2 text-left">Image</th>
+              <th className="border p-2 text-left">Title</th>
+              <th className="border p-2 text-left">Price</th>
+              <th className="border p-2 text-left">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paged.map((item, idx) => (
+              <tr key={idx} className="hover:bg-gray-100">
+                <td className="border p-2">
+                  <img src={item.imageUrl} alt={item.title} className="w-16 h-16 object-cover" />
+                </td>
+                <td className="border p-2">
+                  <a href={item.link} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+                    {item.title}
+                  </a>
+                </td>
+                <td className="border p-2">${item.price.toFixed(2)}</td>
+                <td className="border p-2">{item.date}</td>
               </tr>
-            </thead>
-            <tbody>
-              {paginatedData.map((card) => (
-                <tr key={card.name} className="border-t border-gray-200 hover:bg-gray-50">
-                  <td className="px-4 py-2">
-                    <a
-                      href={card.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-blue-600 hover:underline"
-                    >
-                      <img
-                        src={card.image}
-                        alt={card.name}
-                        className="w-12 h-16 object-cover rounded"
-                      />
-                      <span>{card.name}</span>
-                    </a>
-                  </td>
-                  <td className="px-4 py-2">{card.player}</td>
-                  <td className="px-4 py-2">{card.sport}</td>
-                  <td className="px-4 py-2 text-right">${card.rawAvg.toFixed(2)}</td>
-                  <td className="px-4 py-2 text-right">${card.psa10Avg.toFixed(2)}</td>
-                  <td className="px-4 py-2 text-right">${card.psa9Avg.toFixed(2)}</td>
-                  <td className="px-4 py-2 text-right">{(card.gemRate * 100).toFixed(1)}%</td>
-                  <td className="px-4 py-2 text-right">{card.liquidity.toFixed(1)}/wk</td>
-                  <td className="px-4 py-2 text-right font-semibold text-green-600">
-                    {card.percentROI}%
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
+      )}
 
-        <div className="flex justify-center mt-6 space-x-4">
-          <button
-            onClick={handlePrev}
-            disabled={currentPage === 1}
-            className="px-4 py-2 border rounded disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span className="px-2 py-2 text-sm text-gray-700">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={handleNext}
-            disabled={currentPage === totalPages}
-            className="px-4 py-2 border rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
+      <div className="flex justify-between items-center mt-4">
+        <button
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+          disabled={page === 1}
+          className="px-4 py-2 border rounded disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <span>Page {page} of {totalPages}</span>
+        <button
+          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+          disabled={page === totalPages}
+          className="px-4 py-2 border rounded disabled:opacity-50"
+        >
+          Next
+        </button>
       </div>
     </div>
   );
