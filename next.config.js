@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverActions: true,
-  },
+  // remove any experimental.serverActions or other bad flags
 };
 
 module.exports = nextConfig;
